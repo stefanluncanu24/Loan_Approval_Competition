@@ -62,32 +62,25 @@
 
 <p>We start by downloading and extracting the competition data using the Kaggle API and read it into Pandas DataFrames.</p>
 
-<pre><code># Install Kaggle API if not already installed
+<pre><code>
 # !pip install kaggle
-
-# Getting the data
+    
 !kaggle competitions download -c playground-series-s4e10
 
 import zipfile
 import os
 import pandas as pd
 
-# Define the path to the zip file
 zip_file_path = 'playground-series-s4e10.zip'
 
-# Unzip the file to the current directory
 with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
     zip_ref.extractall('.')
-
-# Delete the zip file
 os.remove(zip_file_path)
 
-# Reading all the data and putting it into DataFrames
 train = pd.read_csv('train.csv')
 test = pd.read_csv('test.csv')
 
-# Combine train and test data if needed (optional)
-# dataset = pd.concat([train, test])
+dataset = pd.concat([train, test])
 </code></pre>
 
 <h2 id="data-description">Data Description</h2>
@@ -118,28 +111,25 @@ test = pd.read_csv('test.csv')
 
 <pre><code>import matplotlib.pyplot as plt
 import seaborn as sns
-
-# Plotting the distribution of loan_status
+    
 label_counts = train['loan_status'].value_counts()
-
-# Plot the pie chart
+    
 plt.figure(figsize=(8, 8))
 plt.pie(label_counts, labels=["Not Defaulted", 'Defaulted'], colors=['green', 'red'], startangle=140, autopct='%1.1f%%')
 plt.title('Distribution of Loan Status')
 plt.show()
 </code></pre>
 
-<img src="images/loan_status_distribution.png" alt="Distribution of Loan Status">
+![image](https://github.com/user-attachments/assets/5351373d-4c02-4261-b012-0e8024ecb4b5)
 
 <h3 id="numerical-feature-distributions">Numerical Feature Distributions</h3>
 
 <p>We plot histograms of numerical features grouped by the target variable to identify differences in distributions.</p>
 
-<pre><code># Identify numerical columns
+<pre><code>
 numerical_columns = train.select_dtypes(include=['int64', 'float64']).columns.tolist()
 numerical_columns.remove('loan_status')  # Remove target variable
 
-# Plot histograms for each numerical column
 colors = {0: 'green', 1: 'red'}
 
 for column in numerical_columns:
@@ -158,7 +148,7 @@ for column in numerical_columns:
 
 <p>We analyze the proportion of loan status across different categories in categorical features.</p>
 
-<pre><code># Identify categorical columns
+<pre><code>
 categorical_columns = train.select_dtypes(include=['object', 'category']).columns.tolist()
 categorical_columns.remove('id')  # Remove id column if present
 
@@ -174,17 +164,18 @@ for column in categorical_columns:
     plt.show()
 </code></pre>
 
+![image](https://github.com/user-attachments/assets/fbe1fe54-f094-45fd-ba2f-a3e1e6026c95)
+
 <h2 id="data-preprocessing">Data Preprocessing</h2>
 
 <h3 id="handling-missing-and-inconsistent-data">Handling Missing and Inconsistent Data</h3>
 
 <p>We remove unnecessary columns and duplicates to clean the dataset.</p>
 
-<pre><code># Drop 'id' column as it's not needed for modeling
+<pre><code>
 train.drop('id', axis=1, inplace=True)
 test.drop('id', axis=1, inplace=True)
 
-# Remove duplicates
 train.drop_duplicates(inplace=True)
 </code></pre>
 
@@ -192,8 +183,6 @@ train.drop_duplicates(inplace=True)
 
 <pre><code># Identify inconsistent data where employment length exceeds age
 inconsistent_entries = train[train['person_emp_length'] > train['person_age']]
-
-# Remove inconsistent entries
 train.drop(inconsistent_entries.index, inplace=True)
 </code></pre>
 
@@ -324,12 +313,10 @@ def objective_lgb(trial):
 
 study_lgb = optuna.create_study(direction='maximize')
 study_lgb.optimize(objective_lgb, n_trials=50)
-
-# Best Parameters
+    
 best_lgb_params = study_lgb.best_params
 print("Best Hyperparameters:", best_lgb_params)
 
-# Final Model
 final_lgb = LGBMClassifier(
     **best_lgb_params,
     random_state=42,
@@ -343,16 +330,13 @@ final_lgb = LGBMClassifier(
 
 <p>We train the final model on the entire training data and generate predictions on the test set, saving the results in the required submission format.</p>
 
-<pre><code># Train the final model
+<pre><code>
 final_lgb.fit(X[selected_features], y)
 
-# Prepare test data
 test_processed_selected = test_processed[selected_features]
 
-# Make predictions
 y_pred_lgb = final_lgb.predict_proba(test_processed_selected)[:, 1]
 
-# Prepare submission
 submission = pd.read_csv('sample_submission.csv')
 submission['loan_status'] = y_pred_lgb
 submission.to_csv('lgb_submission.csv', index=False)
@@ -365,8 +349,6 @@ submission.to_csv('lgb_submission.csv', index=False)
 <p><strong>Next Steps:</strong></p>
 
 <ul>
-    <li>Experiment with different models like XGBoost and CatBoost.</li>
-    <li>Implement cross-validation for more robust evaluation.</li>
     <li>Explore more advanced feature engineering techniques.</li>
     <li>Address class imbalance using techniques like SMOTE or class weighting.</li>
 </ul>
